@@ -1,0 +1,13 @@
+type Query {
+    profesores(nombreFilter: String): [Profesor]
+}
+
+type Profesor {
+    nombreCompleto: String
+    materias: [Materia]
+}
+
+type Materia {
+    nombre: String
+    anio: Int
+}
