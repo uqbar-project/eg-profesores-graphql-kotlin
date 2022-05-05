@@ -1,5 +1,7 @@
 # Ejemplo Profesores y Materias GraphQL
 
+Basado en [este ejemplo de DGS](https://netflix.github.io/dgs/getting-started/), un framework propio de Netflix.
+
 [![build](https://github.com/uqbar-project/eg-profesores-springboot-kotlin/actions/workflows/build.yml/badge.svg)](https://github.com/uqbar-project/eg-profesores-springboot-kotlin/actions/workflows/build.yml) [![codecov](https://codecov.io/gh/uqbar-project/eg-profesores-springboot-kotlin/branch/master/graph/badge.svg?token=GVSN9QQUQZ)](https://codecov.io/gh/uqbar-project/eg-profesores-springboot-kotlin)
 
 ## Prerrequisitos
