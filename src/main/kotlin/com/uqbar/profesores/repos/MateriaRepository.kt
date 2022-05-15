@@ -10,8 +10,14 @@ interface MateriaRepository : CrudRepository<Materia, Long> {
         SELECT m.id as id,
                m.nombre as nombre, 
                m.anio as anio,
+               m.cargaHoraSemanal as cargaHoraSemanal,
+               m.codigo as codigo,
+               m.sitioWeb as sitioWeb,
                p.id as profesorId,
-               p.nombreCompleto as profesorNombre 
+               p.nombre as profesorNombre,
+               p.apellido as profesorApellido,
+               p.anioComienzo as profesorAnioComienzo,
+               p.puntajeDocente as profesorPuntajeDocente
           FROM Profesor p 
                INNER JOIN p.materias m
          WHERE m.id = :id

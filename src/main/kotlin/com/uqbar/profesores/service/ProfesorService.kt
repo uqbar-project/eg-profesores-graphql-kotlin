@@ -28,7 +28,10 @@ class ProfesorService {
     @Transactional
     fun actualizarProfesor(@RequestBody profesorNuevo: Profesor, @PathVariable id: Long): Profesor =
         profesorRepository.findById(id).map {
-            it.nombreCompleto = profesorNuevo.nombreCompleto
+            it.nombre = profesorNuevo.nombre
+            it.apellido = profesorNuevo.apellido
+            it.anioComienzo = profesorNuevo.anioComienzo
+            it.puntajeDocente = profesorNuevo.puntajeDocente
             it.materias = profesorNuevo.materias
             profesorRepository.save(it)
             it

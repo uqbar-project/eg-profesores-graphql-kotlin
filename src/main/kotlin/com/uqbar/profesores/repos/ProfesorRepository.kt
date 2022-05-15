@@ -12,6 +12,6 @@ interface ProfesorRepository : CrudRepository<Profesor, Long> {
     override fun findById(id: Long): Optional<Profesor>
 
     @EntityGraph(attributePaths = ["materias"])
-    @Query("select p from Profesor as p where p.nombreCompleto like :nombreFilter")
+    @Query("select p from Profesor as p where p.apellido like :nombreFilter or p.nombre like :nombreFilter")
     fun findAllByNombreCompleto(@Param("nombreFilter") nombreFilter: String): List<Profesor>
 }
