@@ -2,6 +2,8 @@
 
 ## GraphQL
 
+En la [variante REST]()
+
 ## GraphiQL para testeo local
 
 - Levantamos la aplicación y luego en un navegador consultamos
@@ -146,6 +148,38 @@ class ProfesoresDataFetcher {
 ```
 
 ### Filtrando por nombre
+
+El parámetro que define el schema:
+
+```graphql
+type Query {
+    profesores(nombreFilter: String): [Profesor]
+}
+```
+
+es recibido por el fetcher que a su vez delega la consulta al repository:
+
+```kotlin
+@DgsQuery
+fun profesores(@InputArgument nombreFilter : String?) =
+  profesorRepository.findAllByNombreCompleto((nombreFilter ?: "") + "%")
+```
+
+Eso nos permite consultar pasando como valor el nombre o apellido de una persona docente:
+
+```graphql
+{
+    profesores(nombreFilter: "Lu") {
+        nombre
+        apellido
+        puntajeDocente
+        materias {
+            nombre
+            anio
+        }
+    }
+}
+```
 
 ### Agregando un nuevo query
 
