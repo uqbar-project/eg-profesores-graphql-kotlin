@@ -1,8 +1,11 @@
 # Ejemplo Profesores y Materias GraphQL
 
+[![build](https://github.com/uqbar-project/eg-profesores-graphql-kotlin/actions/workflows/build.yml/badge.svg)](https://github.com/uqbar-project/eg-profesores-graphql-kotlin/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/uqbar-project/eg-profesores-graphql-kotlin/branch/master/graph/badge.svg?token=WQCwF1TJKR)](https://codecov.io/gh/uqbar-project/eg-profesores-graphql-kotlin)
+
 ## GraphQL
 
-En la [variante REST]()
+En la [variante REST](https://github.com/uqbar-project/eg-profesores-springboot-kotlin) hemos implementado varios endpoints para una aplicación que relaciona materias y sus correspondientes profesores (una relación many-to-many).
 
 ## GraphiQL para testeo local
 
@@ -183,6 +186,13 @@ Eso nos permite consultar pasando como valor el nombre o apellido de una persona
 
 ### Agregando un nuevo query
 
-Aquí vemos que podemos ofrecer una navegación de profesor hacia materia. ¿Podríamos lograr hacer una navegación comenzando por materia y luego yendo a profesores?
+Podemos también hacer una consulta de un profesor específico...
 
-### Mutation
+### Mutations
+
+TODO
+
+### Testing
+
+TODO: Explicar
+
