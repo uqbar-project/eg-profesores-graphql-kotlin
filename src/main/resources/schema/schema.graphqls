@@ -1,13 +1,21 @@
+scalar URL
+
 type Query {
     profesores(nombreFilter: String): [Profesor]
 }
 
 type Profesor {
-    nombreCompleto: String
+    nombre: String
+    apellido: String
+    anioComienzo: Int
+    puntajeDocente: Int
     materias: [Materia]
 }
 
 type Materia {
     nombre: String
     anio: Int
+    codigo: String
+    sitioWeb: URL
+    cargaHoraSemanal: Int
 }
