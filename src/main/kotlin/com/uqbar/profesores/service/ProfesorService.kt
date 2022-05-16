@@ -43,12 +43,9 @@ class ProfesorService {
         val profesor = profesorRepository.findById(idProfesor).orElseThrow {
             DgsEntityNotFoundException("El profesor con identificador $idProfesor no existe")
         }
-        println("eeeh? " + materia.nombre.isEmpty())
         val materiaNueva = if (materia.nombre.isEmpty()) {
-            println("busco por id " + materia.id)
             materiaRepository.findById(materia.id)
         } else {
-            println("busco por nombre")
             materiaRepository.findByNombre(materia.nombre)
         }
         if (!materiaNueva.isPresent) throw DgsEntityNotFoundException("La materia no existe")

@@ -188,15 +188,136 @@ Eso nos permite consultar pasando como valor el nombre o apellido de una persona
 }
 ```
 
-### Agregando un nuevo query
+## Mutation
 
-Podemos también hacer una consulta de un profesor específico...
+La mutación requiere agregar información de tipos específicos o `input` en nuestro esquema:
 
-### Mutations
+```graphql
+type Mutation {
+    agregarMateria(idProfesor: Int, materiaInput: MateriaInput): Profesor
+}
 
-TODO
+input MateriaInput {
+    id: Int
+    nombre: String
+}
+```
 
-### Testing
+El mapeo de los parámetros se da utilizando como convención el mismo nombre en la implementación (en caso contrario debés usar anotaciones):
 
-TODO: Explicar
+```kotlin
+@DgsComponent
+class ProfesoresMutation {
 
+   @Autowired
+   lateinit var profesorService: ProfesorService
+
+   @DgsData(parentType = "Mutation")
+   fun agregarMateria(idProfesor: Int, materiaInput: MateriaInput) =
+      profesorService.agregarMateria(idProfesor.toLong(), materiaInput.toMateria())
+
+}
+
+data class MateriaInput(val id: Int, val nombre: String) {
+   fun toMateria(): Materia {
+      val materia = Materia(nombre = nombre, sitioWeb = null)
+      materia.id = id.toLong()
+      return materia
+   }
+}
+```
+
+El service debe buscar profesor y materia (por nombre o id), agregar la materia al profesor y guardar la información (pueden ver la implementación dentro del repositorio).
+
+Como resultado:
+
+- es bastante burocrático agregar una mutación porque requiere definir un tipo específico para los parámetros (input vs. type)
+- a su vez requiere formas de convertir nuestro input en objetos del negocio
+- mientras que la convención REST no ayuda a entender de qué manera actualizar información de una entidad, GraphQL tiene una interfaz mucho más clara e intuitiva
+
+Ejemplo de una mutación en GraphiQL:
+
+```graphql
+mutation {
+  agregarMateria(
+    idProfesor: 1, materiaInput: { id: 0, nombre: "Sistemas Operativos"}
+  ) {
+    id
+    nombre
+    apellido
+    materias {
+      nombre
+    }
+  }
+}
+```
+
+O bien
+
+```graphql
+mutation {
+  agregarMateria(
+    idProfesor: 1, materiaInput: { id: 4, nombre: ""}
+  ) {
+    id
+    nombre
+    apellido
+    materias {
+      nombre
+    }
+  }
+}
+```
+
+## Testing
+
+El testeo de integración se hace a partir de dos variables que se inyectan en el test:
+
+```kotlin
+@SpringBootTest
+@ActiveProfiles("test")
+class ProfesorGraphQLTest {
+   ...
+   
+   @Autowired
+   lateinit var dgsQueryExecutor: DgsQueryExecutor
+
+   @Autowired
+   lateinit var profesoresMutation: ProfesoresMutation
+```
+
+Luego, tiene sentido hacer una búsqueda sencilla de los casos felices para una consulta:
+
+```kotlin
+    @Test
+    fun `consulta de un profesor trae los datos correctamente`() {
+        // Arrange
+        val profesorId = crearProfesorConMaterias()
+        val profesorPrueba = getProfesor(profesorId)
+
+        // Act
+        val profesorResult = buscarProfesor(profesorId)
+
+        // Assert
+        Assertions.assertThat(profesorResult.nombre).isEqualTo(profesorPrueba.nombre)
+        Assertions.assertThat(profesorResult.materias.first().sitioWeb.toString()).contains(profesorPrueba.materias.first().sitioWeb.toString())
+    }
+
+    private fun buscarProfesores(nombreABuscar: String) = dgsQueryExecutor.executeAndExtractJsonPathAsObject("""
+        {
+            profesores(nombreFilter: "$nombreABuscar") {
+                nombre
+                apellido
+                materias {
+                    nombre
+                    codigo
+                }
+            }
+        }
+    """.trimIndent(), "data.profesores[*]", object : TypeRef<List<Profesor>>() {}
+    )
+```
+
+Debemos tener cuidado con que los constructores de los objetos de dominio admitan valores nulos o bien tengan un valor por defecto o estos tests pueden romperse si la consulta GraphQL no trae campos que sean necesarios para instanciar las entidades (por ejemplo si la Materia tiene un código que es un String y no tiene valor por defecto, si no agregamos el código en la consulta la deserialización se va a romper).
+
+El lector puede ver el test de las mutaciones, que es similar a la variante REST solo que invocando a la mutación.
