@@ -2,9 +2,11 @@ scalar URL
 
 type Query {
     profesores(nombreFilter: String): [Profesor]
+    profesor(idProfesor: Int): Profesor
 }
 
 type Profesor {
+    id: Int
     nombre: String
     apellido: String
     anioComienzo: Int

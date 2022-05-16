@@ -42,9 +42,23 @@ class ProfesorDataFetcherTest {
     }
 
     @Test
-    fun `consulta de un profesor por un nombre inexistente no trae información`() {
+    fun `consulta de profesores por un nombre inexistente no trae informacion`() {
         val profesoresResult = buscarProfesores("ZZZZZZ")
         Assertions.assertThat(profesoresResult).isEmpty()
+    }
+
+    @Test
+    fun `consulta de un profesor trae los datos correctamente`() {
+        // Arrange
+        val profesorId = crearProfesorConMaterias()
+        val profesorPrueba = getProfesor(profesorId)
+
+        // Act
+        val profesorResult = buscarProfesor(profesorId)
+
+        // Assert
+        Assertions.assertThat(profesorResult.nombre).isEqualTo(profesorPrueba.nombre)
+        Assertions.assertThat(profesorResult.materias.first().sitioWeb.toString()).contains(profesorPrueba.materias.first().sitioWeb.toString())
     }
 
 //    @Test
@@ -76,6 +90,20 @@ class ProfesorDataFetcherTest {
 //            .content(profesorBody)
 //        ).andExpect(MockMvcResultMatchers.status().isNotFound)
 //    }
+
+    private fun buscarProfesor(idProfesor: Long) = dgsQueryExecutor.executeAndExtractJsonPathAsObject("""
+                {
+                    profesor(idProfesor: $idProfesor) {
+                        nombre
+                        apellido
+                        materias {
+                            nombre
+                            sitioWeb
+                        }
+                    }
+                }
+            """.trimIndent(), "data.profesor", object : TypeRef<Profesor>() {}
+    )
 
     // Ojo que definir atributos no-nullables y sin defaults puede romper los tests!!
     // Por ejemplo, si definimos anio no nulo y sin un valor por defecto, la deserialización se rompe
