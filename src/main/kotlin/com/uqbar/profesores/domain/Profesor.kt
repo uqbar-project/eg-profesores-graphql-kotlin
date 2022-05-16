@@ -6,8 +6,8 @@ import javax.persistence.*
 class Profesor(
    @Column var nombre: String = "",
    @Column var apellido: String = "",
-   @Column var anioComienzo: Int,
-   @Column var puntajeDocente: Int
+   @Column var anioComienzo: Int = 0,
+   @Column var puntajeDocente: Int = 0
 ) {
    @Id
    // El GenerationType asociado a la TABLE es importante para tener

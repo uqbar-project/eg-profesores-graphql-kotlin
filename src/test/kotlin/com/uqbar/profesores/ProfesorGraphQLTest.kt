@@ -15,7 +15,7 @@ import java.net.URL
 
 @SpringBootTest
 @ActiveProfiles("test")
-class ProfesorDataFetcherTest {
+class ProfesorGraphQLTest {
     @Autowired
     lateinit var repoProfes: ProfesorRepository
 

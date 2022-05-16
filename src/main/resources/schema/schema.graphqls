@@ -21,3 +21,19 @@ type Materia {
     sitioWeb: URL
     cargaHoraSemanal: Int
 }
+
+type Mutation {
+    actualizarProfesor(updateProfesor: UpdateProfesor): Profesor
+    agregarMateria(idProfesor: Int, materiaInput: MateriaInput): Profesor
+}
+
+input UpdateProfesor {
+    id: Int
+    nombre: String
+    apellido: String
+}
+
+input MateriaInput {
+    id: Int
+    nombre: String
+}
