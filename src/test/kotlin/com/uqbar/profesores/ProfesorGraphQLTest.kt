@@ -19,15 +19,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
 import java.net.URL
 
-@SpringBootTest(
-   classes = arrayOf(
-      ProfesoresDataFetcher::class,
-      ProfesoresMutation::class,
-      DgsAutoConfiguration::class,
-      ProfesoresApplication::class,
-   ),
-   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
-)
+@SpringBootTest
 @ActiveProfiles("test")
 class ProfesorGraphQLTest {
    @Autowired
