@@ -1,7 +1,7 @@
 package com.uqbar.profesores.graphql
 
 import com.netflix.graphql.dgs.DgsComponent
-import com.netflix.graphql.dgs.DgsData
+import com.netflix.graphql.dgs.DgsMutation
 import com.uqbar.profesores.domain.Materia
 import com.uqbar.profesores.domain.Profesor
 import com.uqbar.profesores.service.ProfesorService
@@ -13,11 +13,11 @@ class ProfesoresMutation {
    @Autowired
    lateinit var profesorService: ProfesorService
 
-   @DgsData(parentType = "Mutation")
+   @DgsMutation
    fun actualizarProfesor(updateProfesor: UpdateProfesor) =
       profesorService.actualizarProfesor(updateProfesor.id.toLong(), updateProfesor.toProfesor())
 
-   @DgsData(parentType = "Mutation")
+   @DgsMutation
    fun agregarMateria(idProfesor: Int, materiaInput: MateriaInput) =
       profesorService.agregarMateria(idProfesor.toLong(), materiaInput.toMateria())
 

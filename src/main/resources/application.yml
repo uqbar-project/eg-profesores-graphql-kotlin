@@ -1,10 +1,10 @@
 spring:
   #   base de datos posta
   datasource:
-    url: jdbc:mysql://localhost/facultadGraphQL?createDatabaseIfNotExist=true
-    username: root
-    password:
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:postgresql://0.0.0.0:5432/facultad
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     open-in-view: false
