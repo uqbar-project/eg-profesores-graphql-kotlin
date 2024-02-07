@@ -7,7 +7,7 @@ type Query {
 
 type Profesor {
     id: Int
-    nombre: String
+    nombre: String!
     apellido: String
     anioComienzo: Int
     puntajeDocente: Int
@@ -15,7 +15,7 @@ type Profesor {
 }
 
 type Materia {
-    nombre: String
+    nombre: String!
     anio: Int
     codigo: String
     sitioWeb: URL

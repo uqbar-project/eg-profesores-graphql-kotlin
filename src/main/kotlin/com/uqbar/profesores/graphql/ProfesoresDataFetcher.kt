@@ -15,7 +15,7 @@ class ProfesoresDataFetcher {
 
    @DgsQuery
    fun profesores(@InputArgument nombreFilter: String?) =
-      profesorService.getProfesoresByNombre((nombreFilter ?: "") + "%")
+      profesorService.getProfesoresByNombre("%" + (nombreFilter ?: "") + "%")
 
    @DgsQuery
    @DgsEnableDataFetcherInstrumentation(false)
