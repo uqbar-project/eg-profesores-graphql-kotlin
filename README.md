@@ -212,7 +212,7 @@ class ProfesoresMutation {
    @Autowired
    lateinit var profesorService: ProfesorService
 
-   @DgsData(parentType = "Mutation")
+   @DgsMutation
    fun agregarMateria(idProfesor: Int, materiaInput: MateriaInput) =
       profesorService.agregarMateria(idProfesor.toLong(), materiaInput.toMateria())
 
