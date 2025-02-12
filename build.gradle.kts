@@ -1,11 +1,9 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-	id("org.springframework.boot") version "3.2.2"
-	id("io.spring.dependency-management") version "1.1.4"
-	kotlin("jvm") version "1.9.22"
-	kotlin("plugin.spring") version "1.9.22"
-	kotlin("plugin.jpa") version "1.9.22"
+	id("org.springframework.boot") version "3.4.2"
+	id("io.spring.dependency-management") version "1.1.7"
+	kotlin("jvm") version "1.9.25"
+	kotlin("plugin.spring") version "1.9.25"
+	kotlin("plugin.jpa") version "1.9.25"
 	jacoco
 }
 
@@ -13,8 +11,9 @@ group = "org.uqbar"
 version = "0.0.1-SNAPSHOT"
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
 }
 
 repositories {
@@ -37,25 +36,18 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
 	// testing
-	testImplementation("com.h2database:h2:2.2.224")
+	testImplementation("com.h2database:h2:2.3.232")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 	// graphql
-	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:latest.release"))
+	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:9.2.2"))
 	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
 }
 
 dependencyManagement {
 	imports {
-		mavenBom("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:latest.release")
-	}
-}
-
-tasks.withType<KotlinCompile> {
-	kotlinOptions {
-		freeCompilerArgs += "-Xjsr305=strict"
-		jvmTarget = "21"
+		mavenBom("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:9.2.2")
 	}
 }
 
@@ -72,7 +64,7 @@ tasks.jacocoTestReport {
 }
 
 jacoco {
-	toolVersion = "0.8.11"
+	toolVersion = "0.8.12"
 }
 
 tasks.jacocoTestReport {
