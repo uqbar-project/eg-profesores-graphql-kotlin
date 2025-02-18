@@ -17,7 +17,7 @@ jobs:
           java-version: '21'
 
       # Execute Gradle commands in GitHub Actions workflows
-      - uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v4
         with:
           arguments: runOnGitHub
 
