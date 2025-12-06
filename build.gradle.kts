@@ -1,9 +1,9 @@
 plugins {
-	id("org.springframework.boot") version "3.4.2"
+	id("org.springframework.boot") version "3.5.8"
 	id("io.spring.dependency-management") version "1.1.7"
-	kotlin("jvm") version "1.9.25"
-	kotlin("plugin.spring") version "1.9.25"
-	kotlin("plugin.jpa") version "1.9.25"
+	kotlin("jvm") version "2.2.21"
+	kotlin("plugin.spring") version "2.2.21"
+	kotlin("plugin.jpa") version "2.2.21"
 	jacoco
 }
 
@@ -12,7 +12,7 @@ version = "0.0.1-SNAPSHOT"
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
+		languageVersion = JavaLanguageVersion.of(24)
 	}
 }
 
@@ -36,13 +36,13 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
 	// testing
-	testImplementation("com.h2database:h2:2.3.232")
+	testImplementation("com.h2database:h2:2.4.240")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 	// graphql
 	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:9.2.2"))
-	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
+	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter:9.2.2")
 }
 
 dependencyManagement {
@@ -64,7 +64,7 @@ tasks.jacocoTestReport {
 }
 
 jacoco {
-	toolVersion = "0.8.12"
+	toolVersion = "0.8.14"
 }
 
 tasks.jacocoTestReport {
