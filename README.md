@@ -188,6 +188,98 @@ Eso nos permite consultar pasando como valor el nombre o apellido de una persona
 }
 ```
 
+## Trayendo información específica
+
+Como en realidad tenemos subclases de materia, cómo podemos traer información de cada una? Utilizamos una interface en nuestro esquema GraphQL:
+
+```graphql
+interface Materia {
+    nombre: String!
+    anio: Int
+    codigo: String
+    sitioWeb: URL
+    cargaHoraSemanal: Int
+    # campo calculado (en común)
+    cargaTotal: Float
+}
+
+# 1. Subclase: MateriaInteresante
+type MateriaInteresante implements Materia {
+    nombre: String!
+    anio: Int
+    codigo: String
+    sitioWeb: URL
+    cargaHoraSemanal: Int
+    cargaTotal: Float
+
+    # Campo específico
+    gradoDeInteres: Int
+}
+
+# 2. Subclase: MateriaDesafiante
+type MateriaDesafiante implements Materia {
+    nombre: String!
+    anio: Int
+    codigo: String
+    sitioWeb: URL
+    cargaHoraSemanal: Int
+    cargaTotal: Float
+
+    # Campos específicos
+    cargaHorasExtra: Int
+    momentoDificil: Boolean
+}
+```
+
+Veamos esta query ad-hoc:
+
+```graphql
+# Consulta para obtener un profesor y su lista de materias.
+query ObtenerProfesorConMateriasSubclase($idProfesor: Int!) {
+  profesor(idProfesor: $idProfesor) {
+    id
+    nombre
+    apellido
+    
+    materias {
+      # 1. Campos comunes (de la interfaz Materia)
+      nombre
+      cargaHoraSemanal
+      cargaTotal
+        
+      # 2. Uso de Fragmentos para campos específicos:
+      # Fragmento Inline para MateriaDesafiante
+      # Este bloque SOLO se ejecuta si el objeto 'materia' es de tipo MateriaDesafiante
+      ... on MateriaDesafiante {
+        # Campos que solo existen en la subclase MateriaDesafiante
+        cargaHorasExtra
+        momentoDificil
+      }
+      
+      # Fragmento Inline para MateriaInteresante
+      # Este bloque SOLO se ejecuta si el objeto 'materia' es de tipo MateriaInteresante
+        ... on MateriaInteresante {
+        gradoDeInteres
+      }
+    }
+  }
+}
+```
+
+Fíjense que podemos definir una variable con su respectivo valor en la solapa de abajo. Luego ejecutamos la query y obtenemos los resultados esperados:
+
+![fragments inheritance](./images/fragmentsInheritance.png)
+
+Cada subclase particular activa el bloque `... on SubclaseDeMateria`, que representa un [fragment](https://graphql.org/learn/queries/#fragments), una estructura de campos reutilizable en más de un contexto. 
+
+## Propiedad calculada cargaTotal
+
+Otro detalle interesante es que definimos una interface Materia que tiene una propiedad cargaTotal, que **no se implementa con un atributo sino con un _template method_**. Basta igualmente con especificarlo en cada subclase (e implementarlo, obviamente) y podemos obtener el valor en nuestras consultas GraphQL.
+
+## Otro ejemplo con fragmentos
+
+Como dijimos antes, los fragmentos son útiles cuando necesitamos reutilizarlos en consultas. 
+
 ## Mutation
 
 La mutación requiere agregar información de tipos específicos o `input` en nuestro esquema:

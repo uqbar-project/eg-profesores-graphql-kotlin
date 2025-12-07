@@ -1,5 +1,45 @@
 scalar URL
 
+# La materia para el schema GraphQL es una interface, aunque
+# se implementa en Kotlin como una clase abstracta
+interface Materia {
+    nombre: String!
+    anio: Int
+    codigo: String
+    sitioWeb: URL
+    cargaHoraSemanal: Int
+    # campo calculado (en común)
+    cargaTotal: Float
+}
+
+# 1. Subclase: MateriaInteresante
+type MateriaInteresante implements Materia {
+    nombre: String!
+    anio: Int
+    codigo: String
+    sitioWeb: URL
+    cargaHoraSemanal: Int
+    cargaTotal: Float
+
+    # Campo específico
+    gradoDeInteres: Int
+}
+
+# 2. Subclase: MateriaDesafiante
+type MateriaDesafiante implements Materia {
+    nombre: String!
+    anio: Int
+    codigo: String
+    sitioWeb: URL
+    cargaHoraSemanal: Int
+    cargaTotal: Float
+
+    # Campos específicos
+    cargaHorasExtra: Int
+    momentoDificil: Boolean
+}
+
+# =====================================================================
 type Query {
     profesores(nombreFilter: String): [Profesor]
     profesor(idProfesor: Int): Profesor
@@ -14,13 +54,7 @@ type Profesor {
     materias: [Materia]
 }
 
-type Materia {
-    nombre: String!
-    anio: Int
-    codigo: String
-    sitioWeb: URL
-    cargaHoraSemanal: Int
-}
+# =====================================================================
 
 type Mutation {
     actualizarProfesor(updateProfesor: UpdateProfesor): Profesor
