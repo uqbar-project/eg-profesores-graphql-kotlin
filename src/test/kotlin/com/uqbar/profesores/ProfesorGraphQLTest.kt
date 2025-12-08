@@ -2,9 +2,7 @@ package com.uqbar.profesores
 
 import com.jayway.jsonpath.TypeRef
 import com.netflix.graphql.dgs.DgsQueryExecutor
-import com.uqbar.profesores.domain.MateriaDesafiante
-import com.uqbar.profesores.domain.MateriaInteresante
-import com.uqbar.profesores.domain.Profesor
+import com.uqbar.profesores.domain.*
 import com.uqbar.profesores.graphql.MateriaInput
 import com.uqbar.profesores.graphql.ProfesoresMutation
 import com.uqbar.profesores.graphql.UpdateProfesor
@@ -21,6 +19,9 @@ import java.net.URI
 @SpringBootTest
 @ActiveProfiles("test")
 class ProfesorGraphQLTest {
+   @Autowired
+   private lateinit var profesorRepository: ProfesorRepository
+
    @Autowired
    lateinit var repoProfes: ProfesorRepository
 
@@ -57,7 +58,7 @@ class ProfesorGraphQLTest {
    @Test
    fun `consulta de un profesor trae los datos correctamente`() {
       // Arrange
-      val profesorPrueba = crearProfesorConMaterias()
+      val profesorPrueba = crearProfesorConMateriasYCursos()
 
       // Act
       val profesorResult = buscarProfesor(profesorPrueba.id)
@@ -65,6 +66,8 @@ class ProfesorGraphQLTest {
       // Assert
       Assertions.assertThat(profesorResult.nombre).isEqualTo(profesorPrueba.nombre)
       Assertions.assertThat(profesorResult.materias.map { it.nombre }).containsExactlyInAnyOrderElementsOf(profesorPrueba.materias.map { it.nombre })
+      Assertions.assertThat(profesorResult.cursos.map { it.turno }).containsExactlyInAnyOrderElementsOf(listOf(Turno.MANIANA, Turno.NOCHE))
+      Assertions.assertThat(profesorResult.cursos.map { it.materia.nombre }.toSet()).containsExactlyInAnyOrderElementsOf(setOf(profesorPrueba.materias.first().nombre))
    }
 
    @Test
@@ -149,6 +152,14 @@ class ProfesorGraphQLTest {
                                  momentoDificil
                              }
                         }
+                        cursos {
+                            cantidadInscriptos
+                            turno
+                            materia {
+                                __typename
+                                nombre
+                            }
+                        }
                     }
                 }
             """.trimIndent(), "data.profesor", object : TypeRef<Profesor>() {}
@@ -201,6 +212,25 @@ class ProfesorGraphQLTest {
          ).apply {
             materias = mutableSetOf(materiaInteresante)
          })
+      return profesor
+   }
+
+   private fun crearProfesorConMateriasYCursos(): Profesor {
+      val profesor = crearProfesorConMaterias()
+      val materiaDelProfesor = profesor.materias.first()
+      profesor.apply {
+         agregarCurso(Curso().apply {
+            cantidadInscriptos = 40
+            turno = Turno.MANIANA
+            materia = materiaDelProfesor
+         })
+         agregarCurso(Curso().apply {
+            cantidadInscriptos = 50
+            turno = Turno.NOCHE
+            materia = materiaDelProfesor
+         })
+      }
+      profesorRepository.save(profesor)
       return profesor
    }
 
