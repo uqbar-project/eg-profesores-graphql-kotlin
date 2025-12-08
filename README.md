@@ -188,7 +188,7 @@ Eso nos permite consultar pasando como valor el nombre o apellido de una persona
 }
 ```
 
-## Trayendo información específica
+## Mapeo de herencia: trayendo información específica
 
 Como en realidad tenemos subclases de materia, cómo podemos traer información de cada una? Utilizamos una interface en nuestro esquema GraphQL:
 
@@ -272,13 +272,384 @@ Fíjense que podemos definir una variable con su respectivo valor en la solapa d
 
 Cada subclase particular activa el bloque `... on SubclaseDeMateria`, que representa un [fragment](https://graphql.org/learn/queries/#fragments), una estructura de campos reutilizable en más de un contexto. 
 
+En general, los fragmentos son útiles cuando necesitamos reutilizarlos en consultas. Podés encontrar más información en la [página oficial de GraphQL](https://graphql.org/learn/queries/#fragments).
+
 ## Propiedad calculada cargaTotal
 
-Otro detalle interesante es que definimos una interface Materia que tiene una propiedad cargaTotal, que **no se implementa con un atributo sino con un _template method_**. Basta igualmente con especificarlo en cada subclase (e implementarlo, obviamente) y podemos obtener el valor en nuestras consultas GraphQL.
+Otro detalle interesante es que definimos una interface Materia que tiene una propiedad cargaTotal, que **no se implementa con un atributo sino con un _template method_**. Basta igualmente con implementarlo en cada subclase
 
-## Otro ejemplo con fragmentos
+```kt
+abstract class Materia() {
+  ... 
+  open fun cargaTotal() = cargaHoraSemanal + cargaHorasExtra()
+  abstract fun cargaHorasExtra(): Double
+}
 
-Como dijimos antes, los fragmentos son útiles cuando necesitamos reutilizarlos en consultas. 
+class MateriaInteresante() : Materia() {
+   @Column var gradoDeInteres: Int = 0
+   override fun cargaHorasExtra() = cargaHoraSemanal * if (gradoDeInteres > 50) 0.2 else 0.1
+}
+
+class MateriaDesafiante() : Materia() {
+   @Column var cargaHorasExtra: Double = 0.0
+   @Column var momentoDificil: Boolean = false
+   override fun cargaHorasExtra() = if (momentoDificil) cargaHorasExtra else 10.0
+}
+```
+
+y podemos obtener el valor en nuestras consultas GraphQL:
+
+```graphql
+query datosDeProfesor($idProfesor: Int!) {
+  profesor(idProfesor: $idProfesor) {
+    nombre
+    apellido    
+    materias {
+      nombre
+      cargaTotal
+    }
+```
+
+## Definiendo cursos: Data Fetcher
+
+Un profesor es asignado ahora a varios cursos, la relación es _one to many_, porque cada curso es impartido por un solo profesor a la vez pero un profesor puede estar a cargo de varios cursos.
+
+Qué pasa si queremos hacer la consulta:
+
+```graphql
+query datosDeProfesor($idProfesor: Int!) {
+  profesor(idProfesor: $idProfesor) {
+    nombre
+    apellido    
+    cursos {
+      cantidadInscriptos
+      turno
+      materia {
+        nombre
+      }
+    }
+  }
+}
+```
+
+El resultado es que falla:
+
+```graphql
+{
+  "errors": [
+    {
+      "message": "INTERNAL",
+      "extensions": {
+        "errorType": "INTERNAL"
+      }
+    }
+  ]
+}
+```
+
+En la consola de IntelliJ vemos que el error es un viejo conocido:
+
+```bash
+org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: com.uqbar.profesores.domain.Profesor.cursos: could not initialize proxy - no Session
+	at org.hibernate.collection.spi.AbstractPersistentCollection.throwLazyInitializationException(AbstractPersistentCollection.java:635) ~[hibernate-core-6.6.36.Final.jar:6.6.36.Final]
+	at org.hibernate.collection.spi.AbstractPersistentCollection.withTemporarySessionIfNeeded(AbstractPersistentCollection.java:219) ~[hibernate-core-6.6.36.Final.jar:6.6.36.Final]
+	at org.hibernate.collection.spi.AbstractPersistentCollection.readSize(AbstractPersistentCollection.java:150) ~[hibernate-core-6.6.36.Final.jar:6.6.36.Final]
+	at org.hibernate.collection.spi.PersistentSet.size(PersistentSet.java:148) ~[hibernate-core-6.6.36.Final.jar:6.6.36.Final]
+	at graphql.util.FpKit.toSize(FpKit.java:198) ~[graphql-java-22.3.jar:na]
+	at graphql.execution.ExecutionStrategy.completeValueForList(ExecutionStrategy.java:784) ~[graphql-java-22.3.jar:na]
+	at graphql.execution.ExecutionStrategy.completeValueForList(ExecutionStrategy.java:769) ~[graphql-java-22.3.jar:na]
+	at graphql.execution.ExecutionStrategy.completeValue(ExecutionStrategy.java:686) ~[graphql-java-22.3.jar:na]
+```
+
+El repository no trae la lista de cursos de un profesor:
+
+```kt
+interface ProfesorRepository : CrudRepository<Profesor, Long> {
+    @EntityGraph(attributePaths = ["materias"])
+    override fun findById(id: Long): Optional<Profesor>
+```
+
+Podemos resolverlo incorporándolo al entity graph. El lector podría pensar: "pero entonces para cubrirme de todos los casos debería agregar la relación con todas las otras entidades". Y un poco es la debilidad del modelo de GraphQL, entonces vamos a trabajar con otro concepto que nos es útil
+
+- si no podemos/queremos agregar en el Repository la relación con otras entidades
+- y recordemos que el EntityGraph en el Repository evita el problema principal que queremos atacar: los **N + 1** queries (que si un profesor tiene 10 cursos, tengamos que hacer 11 queries, uno para traer el profesor y uno para cada Curso que tenga asignado)
+
+### Definiendo un data loader
+
+El Data Loader propone una estructura donde tengamos
+
+- el id del profesor
+- y la lista de cursos
+
+![ProfesorDataLoader.png](./images/ProfesorDataLoader.png)
+
+Para eso crearemos un servicio que trae los cursos de una lista de profesores (pasándole los ids) y lo usaremos en el Data Loader.
+
+```kt
+@DgsDataLoader(name = "cursos")
+class CursosDataLoader : BatchLoader<Long, List<Curso>> {
+    @Autowired
+    lateinit var cursoService: CursoService
+
+    override fun load(idProfesores: MutableList<Long>): CompletionStage<List<List<Curso>>> {
+        return CompletableFuture.supplyAsync {
+            cursoService.getCursosPorProfesor(idProfesores)
+        }
+    }
+}
+```
+
+Esta llamada la hacemos en forma **asincrónica** donde
+
+- CompletionStage es el resultado de una llamada asincrónica no bloqueante (lo que en JS es una _Promise_)
+- CompletableFuture permite construir esa llamada, devolviendo un CompletionStage (equivale a devolver el control inmediato y dejar procesando en background la promesa)
+
+En la JDK tenemos dos conceptos para manejar asincronismo: el Future y el CompletionStage. El Future no permite componer operaciones: si yo quiero hacer algo posterior a la ejecución del callback asincrónico, necesito hacer `get()` que es una operación **bloqueante**, por lo que pierde el sentido del asincronismo.
+
+El CompletableFuture por el contrario permite operar los resultados encadenando así las llamadas asincrónicas al igual que las promesas de Javascript. Para más información recomendamos leer [el artículo de Baeldung](https://www.baeldung.com/java-completablefuture), en especial el párrafo _6. Combining Futures_.
+
+Lo interesante es que el CursoService permite devolver una matriz de cursos (sin que lo tengamos que definir como asincrónico):
+
+```kotlin
+    @Transactional(readOnly = true)
+    fun getCursosPorProfesor(idProfesores: List<Long?>): List<List<Curso>> {
+        val profesoresConCursos = profesorRepository.findAllById(idProfesores.filterNotNull())
+        val cursosAgrupadosPorProfesorId: Map<Long, List<Curso>> = profesoresConCursos
+            .associate { profesor ->
+                profesor.id to profesor.cursos.toList()
+            }
+        return idProfesores.map { profesorId ->
+            cursosAgrupadosPorProfesorId.getOrElse(profesorId!!) { emptyList() }
+        }
+    }
+```
+
+> Un dato importante es que tenemos que respetar el mismo tamaño de los ids que recibimos. Entonces si un profesor no tiene cursos, tenemos que devolver una lista vacía en ese elemento. Esto es porque se trabaja por posición y no con un mapa clave-valor que sería más lógico.
+
+### Data Fetcher
+
+El DataLoader tiene una anotación donde define el nombre "cursos", que vamos a utilizar a continuación en un nuevo fetcher:
+
+```kt
+//@DgsComponent
+class CursosDataFetcher {
+    @DgsData(parentType = "Profesor", field = "cursos")
+    fun cursos(dataFetchingEnvironment: DataFetchingEnvironment): CompletionStage<List<Curso>> {
+        val profesor = dataFetchingEnvironment.getSource<Profesor>()
+        val dataLoader: DataLoader<Long, List<Curso>> = dataFetchingEnvironment.getDataLoader("cursos")!!
+        return dataLoader.load(profesor?.id)
+    }
+}
+```
+
+Aquí podemos ver que el fetcher asocia el nodo Profesor de graphql (primera línea) con el data loader que nos devuelve la lista de cursos (segunda línea), para finalmente hacer el filtrado de los cursos en base a la información del id de profesor (tercera línea).  
+
+### Resultado final
+
+De esa manera solo cuando el usuario pide los cursos de un profesor se dispara la consulta:
+
+```graphql
+query datosDeProfesor($idProfesor: Int!) {
+    profesor(idProfesor: $idProfesor) {
+        id
+        nombre
+        apellido
+
+    }
+}
+```
+
+Solo hace un query:
+
+```kotlin
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.anio_comienzo,
+        p1_0.apellido,
+        m1_0.profesor_id,
+        m1_1.id,
+        case 
+            when m1_2.id is not null 
+                then 1 
+            when m1_3.id is not null 
+                then 2 
+        end,
+        m1_1.anio,
+        m1_1.carga_hora_semanal,
+        m1_1.codigo,
+        m1_1.nombre,
+        m1_1.sitio_web,
+        m1_2.carga_horas_extra,
+        m1_2.momento_dificil,
+        m1_3.grado_de_interes,
+        p1_0.nombre,
+        p1_0.puntaje_docente 
+    from
+        profesor p1_0 
+    left join
+        profesor_materias m1_0 
+            on p1_0.id=m1_0.profesor_id 
+    left join
+        materia m1_1 
+            on m1_1.id=m1_0.materias_id 
+    left join
+        materia_desafiante m1_2 
+            on m1_1.id=m1_2.id 
+    left join
+        materia_interesante m1_3 
+            on m1_1.id=m1_3.id 
+    where
+        p1_0.id=?
+```
+
+Mientras que esta consulta
+
+```graphql
+query datosDeProfesor($idProfesor: Int!) {
+  profesor(idProfesor: $idProfesor) {
+    id
+    nombre
+    apellido    
+    cursos {
+      cantidadInscriptos
+      turno
+      materia {
+        nombre
+      }
+    }
+  }
+}
+```
+
+Se resuelve con tres consultas a la base:
+
+- una para obtener los datos de un profesor
+- otra para buscar todos los ids de todos los profesores (penaliza la primera consulta a cambio de que luego tengamos toda la información de todos los cursos)
+- y finalmente el que trae los datos de los cursos de todos los profesores
+
+```bash
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.anio_comienzo,
+        p1_0.apellido,
+        m1_0.profesor_id,
+        m1_1.id,
+        case 
+            when m1_2.id is not null 
+                then 1 
+            when m1_3.id is not null 
+                then 2 
+        end,
+        m1_1.anio,
+        m1_1.carga_hora_semanal,
+        m1_1.codigo,
+        m1_1.nombre,
+        m1_1.sitio_web,
+        m1_2.carga_horas_extra,
+        m1_2.momento_dificil,
+        m1_3.grado_de_interes,
+        p1_0.nombre,
+        p1_0.puntaje_docente 
+    from
+        profesor p1_0 
+    left join
+        profesor_materias m1_0 
+            on p1_0.id=m1_0.profesor_id 
+    left join
+        materia m1_1 
+            on m1_1.id=m1_0.materias_id 
+    left join
+        materia_desafiante m1_2 
+            on m1_1.id=m1_2.id 
+    left join
+        materia_interesante m1_3 
+            on m1_1.id=m1_3.id 
+    where
+        p1_0.id=?
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.anio_comienzo,
+        p1_0.apellido,
+        p1_0.nombre,
+        p1_0.puntaje_docente 
+    from
+        profesor p1_0 
+    where
+        p1_0.id in (?)
+Hibernate: 
+    select
+        c1_0.profesor_id,
+        c1_1.id,
+        c1_1.cantidad_inscriptos,
+        m1_0.id,
+        case 
+            when m1_1.id is not null 
+                then 1 
+            when m1_2.id is not null 
+                then 2 
+        end,
+        m1_0.anio,
+        m1_0.carga_hora_semanal,
+        m1_0.codigo,
+        m1_0.nombre,
+        m1_0.sitio_web,
+        m1_1.carga_horas_extra,
+        m1_1.momento_dificil,
+        m1_2.grado_de_interes,
+        c1_1.turno 
+    from
+        profesor_cursos c1_0 
+    join
+        curso c1_1 
+            on c1_1.id=c1_0.cursos_id 
+    left join
+        materia m1_0 
+            on m1_0.id=c1_1.materia_id 
+    left join
+        materia_desafiante m1_1 
+            on m1_0.id=m1_1.id 
+    left join
+        materia_interesante m1_2 
+            on m1_0.id=m1_2.id 
+    where
+        c1_0.profesor_id=?
+```
+
+Para más información pueden ver [este artículo de DGS](https://netflix.github.io/dgs/data-loaders/).
+
+## BONUS: Enum types
+
+Un detalle adicional es que el curso se asigna a un turno mañana, tarde o noche:
+
+```kotlin
+class Curso {
+    ...
+    @Column var turno: Turno = Turno.NOCHE
+}
+
+enum class Turno {
+    MANIANA, TARDE, NOCHE
+}
+```
+
+Y eso se refleja tal cual en nuestro schema:
+
+```graphql
+enum Turno {
+    MANIANA
+    TARDE
+    NOCHE
+}
+
+type Curso {
+    materia: Materia
+    cantidadInscriptos: Int
+    turno: Turno
+}
+```
 
 ## Mutation
 

@@ -39,6 +39,18 @@ type MateriaDesafiante implements Materia {
     momentoDificil: Boolean
 }
 
+enum Turno {
+    MANIANA
+    TARDE
+    NOCHE
+}
+
+type Curso {
+    materia: Materia
+    cantidadInscriptos: Int
+    turno: Turno
+}
+
 # =====================================================================
 type Query {
     profesores(nombreFilter: String): [Profesor]
@@ -52,6 +64,7 @@ type Profesor {
     anioComienzo: Int
     puntajeDocente: Int
     materias: [Materia]
+    cursos: [Curso]
 }
 
 # =====================================================================

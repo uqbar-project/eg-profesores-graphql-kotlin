@@ -1,8 +1,10 @@
 package com.uqbar.profesores
 
+import com.uqbar.profesores.domain.Curso
 import com.uqbar.profesores.domain.MateriaDesafiante
 import com.uqbar.profesores.domain.MateriaInteresante
 import com.uqbar.profesores.domain.Profesor
+import com.uqbar.profesores.domain.Turno
 import com.uqbar.profesores.repos.MateriaRepository
 import com.uqbar.profesores.repos.ProfesorRepository
 import org.springframework.beans.factory.InitializingBean
@@ -70,20 +72,42 @@ class ProfesoresBootstrap : InitializingBean {
             cargaHorasExtra = 25.0
             momentoDificil = true
         })
-        val spigariol = Profesor(nombre = "Lucas", apellido = "Spigariol", anioComienzo = 1995, puntajeDocente = 91)
-        spigariol.agregarMateria(algoritmos)
-        spigariol.agregarMateria(paradigmas)
+        val spigariol = Profesor(nombre = "Lucas", apellido = "Spigariol", anioComienzo = 1995, puntajeDocente = 91).apply {
+            agregarMateria(algoritmos)
+            agregarMateria(paradigmas)
+            agregarCurso(Curso().apply {
+                cantidadInscriptos = 50
+                materia = algoritmos
+                turno = Turno.NOCHE
+            })
+        }
 
-        val passerini = Profesor(nombre = "Nicolás", apellido = "Passerini", anioComienzo =  2002, puntajeDocente = 84)
-        passerini.agregarMateria(paradigmas)
-        passerini.agregarMateria(disenio)
+        val passerini = Profesor(nombre = "Nicolás", apellido = "Passerini", anioComienzo =  2002, puntajeDocente = 84).apply {
+            agregarMateria(paradigmas)
+            agregarMateria(disenio)
+            agregarCurso(Curso().apply {
+                cantidadInscriptos = 23
+                materia = disenio
+                turno = Turno.TARDE
+            })
+            agregarCurso(Curso().apply {
+                cantidadInscriptos = 42
+                materia = paradigmas
+                turno = Turno.MANIANA
+            })
+        }
 
-        val dodino = Profesor(nombre = "Fernando", apellido = "Dodino", anioComienzo = 1997, puntajeDocente = 90)
-        dodino.agregarMateria(disenio)
+        val dodino = Profesor(nombre = "Fernando", apellido = "Dodino", anioComienzo = 1997, puntajeDocente = 90).apply {
+            agregarMateria(disenio)
+            agregarCurso(Curso().apply {
+                cantidadInscriptos = 81
+                materia = disenio
+                turno = Turno.NOCHE
+            })
+        }
 
         repoProfes.save(spigariol)
         repoProfes.save(passerini)
         repoProfes.save(dodino)
-
     }
 }

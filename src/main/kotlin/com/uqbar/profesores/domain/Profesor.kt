@@ -1,12 +1,6 @@
 package com.uqbar.profesores.domain
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.ManyToMany
+import jakarta.persistence.*
 
 @Entity
 class Profesor(
@@ -25,7 +19,14 @@ class Profesor(
    @ManyToMany(fetch = FetchType.LAZY)
    var materias: MutableSet<Materia> = HashSet()
 
+   @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+   var cursos: MutableSet<Curso> = HashSet()
+
    fun agregarMateria(materia: Materia) {
       materias.add(materia)
+   }
+
+   fun agregarCurso(curso: Curso) {
+      cursos.add(curso)
    }
 }
