@@ -7,7 +7,7 @@ interface Materia {
     anio: Int
     codigo: String
     sitioWeb: URL
-    cargaHoraSemanal: Int
+    cargaHoraSemanal: Float
     # campo calculado (en común)
     cargaTotal: Float
 }
