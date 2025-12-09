@@ -18,7 +18,7 @@ type MateriaInteresante implements Materia {
     anio: Int
     codigo: String
     sitioWeb: URL
-    cargaHoraSemanal: Int
+    cargaHoraSemanal: Float
     cargaTotal: Float
 
     # Campo específico
