@@ -16,7 +16,7 @@ class CursoService {
     fun getCursosPorProfesor(idProfesores: List<Long?>): List<List<Curso>> {
         // 1. Obtener todos los cursos para todos los IDs de profesores en una sola consulta.
         // Se asume que la entidad Curso tiene una referencia directa al Profesor (curso.profesor.id).
-        val profesoresConCursos = profesorRepository.findAllById(idProfesores.filterNotNull())
+        val profesoresConCursos = profesorRepository.findAllCursosByIds(idProfesores.filterNotNull())
 
         // 2. Agrupar los cursos por el ID del profesor para facilitar la búsqueda.
         // Convertimos la lista de profesores encontrados en un mapa.

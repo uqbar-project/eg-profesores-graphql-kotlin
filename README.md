@@ -446,7 +446,7 @@ Aquí podemos ver que el fetcher asocia el nodo Profesor de graphql (primera lí
 
 ### Resultado final
 
-De esa manera solo cuando el usuario pide los cursos de un profesor se dispara la consulta:
+De esa manera cuando el usuario pide los cursos de un profesor se activa el Data Loader. En este caso:
 
 ```graphql
 query datosDeProfesor($idProfesor: Int!) {
@@ -454,12 +454,11 @@ query datosDeProfesor($idProfesor: Int!) {
         id
         nombre
         apellido
-
     }
 }
 ```
 
-Solo hace un query:
+solo se dispara un query:
 
 ```kotlin
 Hibernate: 
@@ -506,27 +505,26 @@ Hibernate:
 Mientras que esta consulta
 
 ```graphql
-query datosDeProfesor($idProfesor: Int!) {
-  profesor(idProfesor: $idProfesor) {
-    id
-    nombre
-    apellido    
-    cursos {
-      cantidadInscriptos
-      turno
-      materia {
+query datosDeProfesores {
+    profesores(nombreFilter: "") {
+        id
         nombre
-      }
+        apellido
+        cursos {
+            cantidadInscriptos
+            turno
+            materia {
+                nombre
+            }
+        }
     }
-  }
 }
 ```
 
-Se resuelve con tres consultas a la base:
+se resuelve con dos consultas a la base:
 
 - una para obtener los datos de un profesor
-- otra para buscar todos los ids de todos los profesores (penaliza la primera consulta a cambio de que luego tengamos toda la información de todos los cursos)
-- y finalmente el que trae los datos de los cursos de todos los profesores
+- y finalmente el que trae los datos de los cursos de todos los profesores cuyo id pasamos
 
 ```bash
 Hibernate: 
@@ -567,20 +565,13 @@ Hibernate:
         materia_interesante m1_3 
             on m1_1.id=m1_3.id 
     where
-        p1_0.id=?
+        p1_0.apellido like ? escape '' 
+        or p1_0.nombre like ? escape ''
 Hibernate: 
     select
         p1_0.id,
         p1_0.anio_comienzo,
         p1_0.apellido,
-        p1_0.nombre,
-        p1_0.puntaje_docente 
-    from
-        profesor p1_0 
-    where
-        p1_0.id in (?)
-Hibernate: 
-    select
         c1_0.profesor_id,
         c1_1.id,
         c1_1.cantidad_inscriptos,
@@ -599,13 +590,18 @@ Hibernate:
         m1_1.carga_horas_extra,
         m1_1.momento_dificil,
         m1_2.grado_de_interes,
-        c1_1.turno 
+        c1_1.turno,
+        p1_0.nombre,
+        p1_0.puntaje_docente 
     from
+        profesor p1_0 
+    join
         profesor_cursos c1_0 
+            on p1_0.id=c1_0.profesor_id 
     join
         curso c1_1 
             on c1_1.id=c1_0.cursos_id 
-    left join
+    join
         materia m1_0 
             on m1_0.id=c1_1.materia_id 
     left join
@@ -615,7 +611,7 @@ Hibernate:
         materia_interesante m1_2 
             on m1_0.id=m1_2.id 
     where
-        c1_0.profesor_id=?
+        p1_0.id in (?, ?, ?)
 ```
 
 Para más información pueden ver [este artículo de DGS](https://netflix.github.io/dgs/data-loaders/).

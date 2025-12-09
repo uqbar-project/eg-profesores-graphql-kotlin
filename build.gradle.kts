@@ -42,7 +42,7 @@ dependencies {
 
 	// graphql
 	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:9.2.2"))
-	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter:9.2.2")
+	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
 }
 
 dependencyManagement {

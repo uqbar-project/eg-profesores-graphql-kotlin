@@ -14,4 +14,7 @@ interface ProfesorRepository : CrudRepository<Profesor, Long> {
     @EntityGraph(attributePaths = ["materias"])
     @Query("select p from Profesor as p where p.apellido like :nombreFilter or p.nombre like :nombreFilter")
     fun findAllByNombreOrApellido(@Param("nombreFilter") nombreFilter: String): List<Profesor>
+
+    @Query("select p from Profesor as p join fetch p.cursos c join fetch c.materia where p.id in :ids")
+    fun findAllCursosByIds(ids: List<Long>): List<Profesor>
 }
