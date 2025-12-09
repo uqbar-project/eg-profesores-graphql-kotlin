@@ -16,7 +16,7 @@ class CursoService {
     fun getCursosPorProfesor(idProfesores: List<Long?>): List<List<Curso>> {
         // 1. Obtener todos los cursos para todos los IDs de profesores en una sola consulta.
         // Se asume que la entidad Curso tiene una referencia directa al Profesor (curso.profesor.id).
-        val profesoresConCursos = profesorRepository.findAllCursosByIds(idProfesores.filterNotNull())
+        val profesoresConCursos = profesorRepository.findAllWithCursosByIds(idProfesores.filterNotNull())
 
         // 2. Agrupar los cursos por el ID del profesor para facilitar la búsqueda.
         // Convertimos la lista de profesores encontrados en un mapa.
@@ -32,6 +32,8 @@ class CursoService {
             // getOrElse es importante: si un profesor existe pero no tiene cursos, devuelve una lista vacía
             // asegurando que la lista externa SIEMPRE tenga el mismo tamaño
             // que la lista de entrada (profesorIds).
+            // o... en lugar de usar listas de listas de cursos podríamos usar mapas, ver
+            // https://netflix.github.io/dgs/data-loaders/#mappedbatchloader
             cursosAgrupadosPorProfesorId.getOrElse(profesorId!!) { emptyList() }
         }
     }

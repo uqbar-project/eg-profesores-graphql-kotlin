@@ -431,7 +431,7 @@ Lo interesante es que el CursoService permite devolver una matriz de cursos (sin
 El DataLoader tiene una anotación donde define el nombre "cursos", que vamos a utilizar a continuación en un nuevo fetcher:
 
 ```kt
-//@DgsComponent
+@DgsComponent
 class CursosDataFetcher {
     @DgsData(parentType = "Profesor", field = "cursos")
     fun cursos(dataFetchingEnvironment: DataFetchingEnvironment): CompletionStage<List<Curso>> {
@@ -502,7 +502,7 @@ Hibernate:
         p1_0.id=?
 ```
 
-Mientras que esta consulta
+Mientras que esta consulta GraphQL
 
 ```graphql
 query datosDeProfesores {
@@ -616,7 +616,7 @@ Hibernate:
 
 Para más información pueden ver [este artículo de DGS](https://netflix.github.io/dgs/data-loaders/).
 
-## BONUS: Enum types
+## Enum types
 
 Un detalle adicional es que el curso se asigna a un turno mañana, tarde o noche:
 

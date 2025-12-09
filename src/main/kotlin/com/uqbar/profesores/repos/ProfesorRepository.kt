@@ -16,5 +16,5 @@ interface ProfesorRepository : CrudRepository<Profesor, Long> {
     fun findAllByNombreOrApellido(@Param("nombreFilter") nombreFilter: String): List<Profesor>
 
     @Query("select p from Profesor as p join fetch p.cursos c join fetch c.materia where p.id in :ids")
-    fun findAllCursosByIds(ids: List<Long>): List<Profesor>
+    fun findAllWithCursosByIds(ids: List<Long>): List<Profesor>
 }
