@@ -2,11 +2,8 @@ package com.uqbar.profesores
 
 import com.jayway.jsonpath.TypeRef
 import com.netflix.graphql.dgs.DgsQueryExecutor
-import com.netflix.graphql.dgs.autoconfig.DgsAutoConfiguration
-import com.uqbar.profesores.domain.Materia
-import com.uqbar.profesores.domain.Profesor
+import com.uqbar.profesores.domain.*
 import com.uqbar.profesores.graphql.MateriaInput
-import com.uqbar.profesores.graphql.ProfesoresDataFetcher
 import com.uqbar.profesores.graphql.ProfesoresMutation
 import com.uqbar.profesores.graphql.UpdateProfesor
 import com.uqbar.profesores.repos.MateriaRepository
@@ -17,11 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
-import java.net.URL
+import java.net.URI
 
 @SpringBootTest
 @ActiveProfiles("test")
 class ProfesorGraphQLTest {
+   @Autowired
+   private lateinit var profesorRepository: ProfesorRepository
+
    @Autowired
    lateinit var repoProfes: ProfesorRepository
 
@@ -46,7 +46,7 @@ class ProfesorGraphQLTest {
       val profesoresResult = buscarProfesores(nombreABuscar)
       val profesorResult = profesoresResult.first()
       Assertions.assertThat(profesorResult.nombre).isEqualTo(profesorPrueba.nombre)
-      Assertions.assertThat(profesorResult.materias.first().nombre).contains(profesorPrueba.materias.first().nombre)
+      Assertions.assertThat(profesorResult.materias.map { it.nombre }).containsExactlyInAnyOrderElementsOf(profesorPrueba.materias.map { it.nombre })
    }
 
    @Test
@@ -58,15 +58,16 @@ class ProfesorGraphQLTest {
    @Test
    fun `consulta de un profesor trae los datos correctamente`() {
       // Arrange
-      val profesorPrueba = crearProfesorConMaterias()
+      val profesorPrueba = crearProfesorConMateriasYCursos()
 
       // Act
       val profesorResult = buscarProfesor(profesorPrueba.id)
 
       // Assert
       Assertions.assertThat(profesorResult.nombre).isEqualTo(profesorPrueba.nombre)
-      Assertions.assertThat(profesorResult.materias.first().sitioWeb.toString())
-         .contains(profesorPrueba.materias.first().sitioWeb.toString())
+      Assertions.assertThat(profesorResult.materias.map { it.nombre }).containsExactlyInAnyOrderElementsOf(profesorPrueba.materias.map { it.nombre })
+      Assertions.assertThat(profesorResult.cursos.map { it.turno }).containsExactlyInAnyOrderElementsOf(listOf(Turno.MANIANA, Turno.NOCHE))
+      Assertions.assertThat(profesorResult.cursos.map { it.materia.nombre }.toSet()).containsExactlyInAnyOrderElementsOf(setOf(profesorPrueba.materias.first().nombre))
    }
 
    @Test
@@ -74,15 +75,8 @@ class ProfesorGraphQLTest {
    fun `podemos agregar una materia a un profesor por id de materia`() {
       // Arrange
       val profesorOriginal = crearProfesorConMaterias()
-      val materiaNueva = repoMaterias.save(
-         Materia(
-            nombre = "Ingeniería de Software",
-            sitioWeb = URL("http://ingenieria-software.edu.ar"),
-            cargaHoraSemanal = 5,
-            anio = 5,
-            codigo = "TPI25"
-         )
-      )
+
+      val materiaNueva = repoMaterias.save(materiaDesafiante())
       val cantidadMateriasOriginales = profesorOriginal.materias.size
       Assertions.assertThat(1).isEqualTo(cantidadMateriasOriginales)
 
@@ -101,15 +95,7 @@ class ProfesorGraphQLTest {
    fun `podemos agregar una materia a un profesor por nombre de materia`() {
       // Arrange
       val profesorOriginal = crearProfesorConMaterias()
-      val materiaNueva = repoMaterias.save(
-         Materia(
-            nombre = "Ingeniería de Software",
-            sitioWeb = URL("http://ingenieria-software.edu.ar"),
-            cargaHoraSemanal = 5,
-            anio = 5,
-            codigo = "TPI25"
-         )
-      )
+      val materiaNueva = repoMaterias.save(materiaDesafiante())
       val cantidadMateriasOriginales = profesorOriginal.materias.size
       Assertions.assertThat(1).isEqualTo(cantidadMateriasOriginales)
 
@@ -155,8 +141,24 @@ class ProfesorGraphQLTest {
                         nombre
                         apellido
                         materias {
+                            __typename
                             nombre
                             sitioWeb
+                            ... on MateriaInteresante {
+                                 gradoDeInteres
+                             }
+                             ... on MateriaDesafiante {
+                                 cargaHorasExtra
+                                 momentoDificil
+                             }
+                        }
+                        cursos {
+                            cantidadInscriptos
+                            turno
+                            materia {
+                                __typename
+                                nombre
+                            }
                         }
                     }
                 }
@@ -171,8 +173,16 @@ class ProfesorGraphQLTest {
                         nombre
                         apellido
                         materias {
+                            __typename
                             nombre
                             codigo
+                             ... on MateriaInteresante {
+                                 gradoDeInteres
+                             }
+                             ... on MateriaDesafiante {
+                                 cargaHorasExtra
+                                 momentoDificil
+                             }
                         }
                     }
                 }
@@ -184,14 +194,15 @@ class ProfesorGraphQLTest {
          .orElseThrow { RuntimeException("Profesor con identificador $idProfesor no existe") }
 
    private fun crearProfesorConMaterias(): Profesor {
-      val materia = Materia(
-         nombre = "Algoritmos I",
-         anio = 1,
-         codigo = "TI07",
-         sitioWeb = URL("http://algo1.unsam.edu.ar"),
-         cargaHoraSemanal = 5
-      )
-      repoMaterias.save(materia)
+      val materiaInteresante = MateriaInteresante().apply {
+         nombre = "Algoritmos I"
+         anio = 1
+         codigo = "TI07"
+         sitioWeb = URI.create("http://algo1.unsam.edu.ar").toURL()
+         cargaHoraSemanal = 5.0
+         gradoDeInteres = 40
+      }
+      repoMaterias.save(materiaInteresante)
       val profesor = repoProfes.save(
          Profesor(
             nombre = "Juana",
@@ -199,10 +210,37 @@ class ProfesorGraphQLTest {
             puntajeDocente = 56,
             anioComienzo = 2019
          ).apply {
-            materias = mutableSetOf(materia)
+            materias = mutableSetOf(materiaInteresante)
          })
       return profesor
    }
 
+   private fun crearProfesorConMateriasYCursos(): Profesor {
+      val profesor = crearProfesorConMaterias()
+      val materiaDelProfesor = profesor.materias.first()
+      profesor.apply {
+         agregarCurso(Curso().apply {
+            cantidadInscriptos = 40
+            turno = Turno.MANIANA
+            materia = materiaDelProfesor
+         })
+         agregarCurso(Curso().apply {
+            cantidadInscriptos = 50
+            turno = Turno.NOCHE
+            materia = materiaDelProfesor
+         })
+      }
+      profesorRepository.save(profesor)
+      return profesor
+   }
 
+   private fun materiaDesafiante(): MateriaDesafiante = MateriaDesafiante().apply {
+      nombre = "Ingenieria de Software"
+      sitioWeb = URI.create("http://ingenieria-software.edu.ar").toURL()
+      cargaHoraSemanal = 5.0
+      anio = 5
+      codigo = "TPI25"
+      cargaHorasExtra = 3.0
+      momentoDificil = false
+   }
 }

@@ -18,4 +18,6 @@ spring:
 server:
   error:
     include-message: always
+    include-exception: true
     include-binding-errors: always
+    include-stacktrace: always
