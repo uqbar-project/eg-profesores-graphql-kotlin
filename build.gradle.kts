@@ -49,15 +49,9 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-	// graphql - la versión 10 rompe retrocompatibilidad
-	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:9.2.2"))
-	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
-}
-
-dependencyManagement {
-	imports {
-		mavenBom("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:9.2.2")
-	}
+	// graphql
+	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:10.5.0"))
+	implementation("com.netflix.graphql.dgs:dgs-starter")
 }
 
 tasks.withType<Test> {
