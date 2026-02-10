@@ -49,7 +49,7 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-	// graphql
+	// graphql -> la 10.5.0 funciona ok, la 11 falla para Spring Boot 3.5.10
 	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:10.5.0"))
 	implementation("com.netflix.graphql.dgs:dgs-starter")
 }
