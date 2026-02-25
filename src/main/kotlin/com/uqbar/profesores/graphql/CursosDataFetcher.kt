@@ -19,6 +19,6 @@ class CursosDataFetcher {
         val dataLoader: DataLoader<Long, List<Curso>> = dataFetchingEnvironment.getDataLoader("cursos")!!
 
         // 3. Cargamos la lista de cursos usando el ID del profesor
-        return dataLoader.load(profesor?.id)
+        return dataLoader.load(profesor?.id!!)
     }
 }

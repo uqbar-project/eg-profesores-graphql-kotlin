@@ -1,7 +1,6 @@
 package com.uqbar.profesores.graphql
 
 import com.netflix.graphql.dgs.DgsComponent
-import com.netflix.graphql.dgs.DgsEnableDataFetcherInstrumentation
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import com.uqbar.profesores.service.ProfesorService
@@ -18,7 +17,6 @@ class ProfesoresDataFetcher {
       profesorService.getProfesoresByNombre("%" + (nombreFilter ?: "") + "%")
 
    @DgsQuery
-   @DgsEnableDataFetcherInstrumentation(false)
    fun profesor(@InputArgument idProfesor: Int) =
       profesorService.getProfesor(idProfesor.toLong())
 }

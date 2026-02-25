@@ -1,19 +1,28 @@
 plugins {
-	id("org.springframework.boot") version "3.5.8"
+	id("org.springframework.boot") version "3.5.10"
 	id("io.spring.dependency-management") version "1.1.7"
-	kotlin("jvm") version "2.2.21"
-	kotlin("plugin.spring") version "2.2.21"
-	kotlin("plugin.jpa") version "2.2.21"
+	kotlin("jvm") version "2.3.0"
+	kotlin("plugin.spring") version "2.3.0"
+	kotlin("plugin.jpa") version "2.3.0"
 	jacoco
 }
 
 group = "org.uqbar"
 version = "0.0.1-SNAPSHOT"
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(24)
+kotlin {
+	jvmToolchain(21)
+
+	compilerOptions {
+		freeCompilerArgs.addAll(
+			"-Xjsr305=strict",
+		)
 	}
+}
+
+tasks.withType<JavaCompile> {
+	targetCompatibility = "21"
+	sourceCompatibility = "21"
 }
 
 repositories {
@@ -40,15 +49,9 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-	// graphql
-	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:9.2.2"))
-	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
-}
-
-dependencyManagement {
-	imports {
-		mavenBom("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:9.2.2")
-	}
+	// graphql -> la 10.5.0 funciona ok, la 11 falla para Spring Boot 3.5.10
+	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:10.5.0"))
+	implementation("com.netflix.graphql.dgs:dgs-starter")
 }
 
 tasks.withType<Test> {
@@ -80,10 +83,4 @@ tasks.jacocoTestReport {
 		csv.required.set(false)
 		html.outputLocation.set(layout.buildDirectory.dir("jacocoHtml"))
 	}
-}
-
-tasks.register("runOnGitHub") {
-	dependsOn("jacocoTestReport")
-	group = "custom"
-	description = "$ ./gradlew runOnGitHub # runs on GitHub Action"
 }
