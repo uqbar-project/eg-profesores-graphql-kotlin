@@ -13,6 +13,8 @@ spring:
       ddl-auto: create-drop
     properties:
       hibernate:
+#        para evitar n+1 queries con eager / open-in-view: true
+#        default_batch_fetch_size: 2
         format_sql: true
 
 server:

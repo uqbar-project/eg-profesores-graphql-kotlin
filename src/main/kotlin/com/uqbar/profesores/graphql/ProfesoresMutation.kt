@@ -29,13 +29,13 @@ data class UpdateProfesor(val id: Int, val nombre: String, val apellido: String)
    fun toProfesor() = Profesor(nombre = nombre, apellido = apellido)
 }
 
-data class MateriaInput(val id: Int, val _nombre: String) {
+data class MateriaInput(val id: Int, val nombre: String) {
    fun toMateria(): Materia {
-      val sitioMateria = _nombre.replace(" ", "").lowercase()
+      val sitioMateria = nombre.replace(" ", "").lowercase()
       val materia = MateriaInteresante().apply {
-         nombre = _nombre
          sitioWeb = URI.create("https://facultad.edu.ar/$sitioMateria").toURL()
       }
+      materia.nombre = nombre
       materia.id = id.toLong()
       return materia
    }
